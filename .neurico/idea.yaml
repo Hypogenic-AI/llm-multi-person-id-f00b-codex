@@ -1,0 +1,23 @@
+idea:
+  title: Utilizing large language models to improve the performance of multi-person
+    identification.
+  domain: artificial_intelligence
+  hypothesis: 'Large language models can be used to improve the performance of multi-person
+    identification, especially in scenarios where automatic speech recognition (ASR)
+    has limitations due to the presence of many speakers.
+
+    '
+  background:
+    description: 'ASR recognition has its limitation when speakers are many. Can we
+      use large language models to improve the performance of multi-person identification.
+
+      '
+  metadata:
+    author: Qianyi Li
+    source: IdeaHub
+    source_url: https://hypogenic.ai/ideahub/idea/h0BpWFZScDS07HRjVkmq
+    idea_id: utilizing_large_language_model_20260706_061604_6554f62f
+    created_at: '2026-07-06T06:16:04.877121'
+    status: submitted
+    github_repo_name: llm-multi-person-id-f00b-codex
+    github_repo_url: https://github.com/Hypogenic-AI/llm-multi-person-id-f00b-codex
