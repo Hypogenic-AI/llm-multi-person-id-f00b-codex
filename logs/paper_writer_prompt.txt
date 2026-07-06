@@ -1,0 +1,691 @@
+You are an academic paper writer. Generate a complete NEURIPS style paper
+based on the experiment results provided.
+
+════════════════════════════════════════════════════════════════════════════════
+                         IMPORTANT: BEFORE YOU START
+════════════════════════════════════════════════════════════════════════════════
+
+Before writing any content, you MUST complete these steps:
+
+1. READ THE SKILL: Review the paper-writer skill at .codex/skills/paper-writer/SKILL.md
+2. READ THE STYLE GUIDE: Study templates/paper_writing/lab_style_guide.md carefully
+3. REVIEW EXAMPLES: Browse paper_examples/ for formatting and language patterns:
+   - Look at sections/1.introduction.tex for language style
+   - Look at tables/*.tex for table formatting
+   - Look at commands/*.tex for macro usage
+4. VERIFY COMMAND TEMPLATES: Command templates (math.tex, general.tex, macros.tex) are pre-copied to paper_draft/commands/
+
+CRITICAL: Reference example papers for FORMATTING and LANGUAGE STYLE only.
+Do NOT copy content, phrasing, or narrative structure from the example papers.
+The examples are in a different research domain - focus only on presentation style.
+
+════════════════════════════════════════════════════════════════════════════════
+                            EXPERIMENT REPORT
+════════════════════════════════════════════════════════════════════════════════
+
+# Utilizing Large Language Models to Improve Multi-Person Identification
+
+## 1. Executive Summary
+
+This study tested whether real LLM post-processing can improve speaker identification in multi-person ASR-style transcripts when baseline speaker labels are noisy. I built a controlled pilot from local AMI SDM and Simsamu audio: OpenAI `gpt-4o-mini-transcribe` produced real ASR text for 90 annotated speech segments, then `gpt-4.1-mini` relabeled noisy speaker IDs under zero-profile and profile-conditioned prompts.
+
+The key result is mixed and mostly cautionary. Across 30 window/noise cases, zero-profile LLM relabeling reduced mean WDER from 0.390 to 0.375, a 3.8% relative reduction, but the effect was not statistically significant after Holm correction (Wilcoxon one-sided p=0.137, Holm p=0.410). In the four-speaker AMI windows, the LLM almost always left labels unchanged, producing no improvement over noisy labels.
+
+Practically, this pilot suggests that LLMs can be a safe transcript-preserving correction layer, but naive prompting is not enough for many-speaker meeting identification. Stronger speaker profiles, acoustic confidence scores, or fine-tuned DiarizationLM-style models are likely required.
+
+## 2. Research Question & Motivation
+
+**Research question:** Can large language models improve multi-person speaker identification from ASR transcripts when speaker labels are noisy, especially when many speakers make ASR/diarization difficult?
+
+This matters because meeting transcripts are only useful if they preserve who said what. The literature review identified DiarizationLM, language-model-assisted diarization, diarization-aware multi-speaker ASR, and DM-ASR as evidence that language context can help speaker attribution. The open gap is whether a lightweight API-based LLM correction layer helps in small many-speaker settings without full model fine-tuning or proprietary speech-LLM training.
+
+## 3. Experimental Setup
+
+### Models Tested
+
+- ASR: `gpt-4o-mini-transcribe`, OpenAI audio transcription endpoint.
+- LLM relabeler: `gpt-4.1-mini`, OpenAI Chat Completions endpoint.
+- LLM parameters: `temperature=0` where accepted, JSON-object response format, speaker-ID-only output.
+- Fallback models were implemented but not needed in the run.
+
+### Datasets and Windows
+
+The experiment used pre-gathered local resources:
+
+| Dataset | Windows | Speakers/window | Source rows | Notes |
+|---|---:|---:|---|---|
+| AMI SDM sample | 3 | 4 | `datasets/ami_sdm_sample/` | English meeting audio with high overlap rates |
+| Simsamu | 2 | 2 | `datasets/simsamu/` | French clinical dialogue sanity dataset |
+
+The local AMI shard contains speaker time segments but not manual word transcripts. To avoid invented transcripts, I transcribed selected real audio chunks with ASR and treated the resulting words as the transcript to preserve. Ground-truth speaker IDs came from the local diarization annotations.
+
+### Baselines and Conditions
+
+- `noisy_labels`: seeded speaker-label corruption, with higher corruption probability for overlap, short turns, and speaker-change boundaries.
+- `continuity_smoothing`: deterministic correction of isolated single-turn speaker changes.
+- `llm_no_profile`: `gpt-4.1-mini` relabeling from noisy transcript context only.
+- `llm_profile`: same LLM with clean, unscored high-confidence profile turns per speaker.
+
+### Metrics
+
+- WDER: word-weighted speaker-label error rate.
+- cpWER-style score: concatenated speaker-attributed WER under minimum speaker permutation.
+- Segment error rate: fraction of evaluated segments with wrong speaker ID.
+- Speaker count MAE: absolute error in number of predicted speakers.
+- Parse success: whether the LLM returned valid JSON speaker assignments.
+
+### Resources and Cost
+
+The run used CPU for local orchestration and API calls; GPU acceleration was not needed. Available GPUs were four NVIDIA RTX A6000 devices with 49 GB each, documented in `results/environment.json`.
+
+Usage:
+
+| Item | Quantity | Estimated cost |
+|---|---:|---:|
+| ASR audio | 90 segments, 343.28 seconds | $0.017 |
+| LLM calls | 60 calls, 63,822 input tokens, 19,800 output tokens | $0.057 |
+| Total | 5 windows, 30 cases | $0.074 |
+
+Pricing used official OpenAI pages for `gpt-4.1-mini` and transcription pricing as of July 6, 2026: <https://developers.openai.com/api/docs/models/gpt-4.1-mini> and <https://developers.openai.com/api/docs/pricing>.
+
+## 4. Results
+
+### Overall Results
+
+| Method | Mean WDER | Mean cpWER | Segment error | Parse success |
+|---|---:|---:|---:|---:|
+| `llm_no_profile` | 0.375 | 0.521 | 0.373 | 1.00 |
+| `llm_profile` | 0.381 | 0.529 | 0.380 | 1.00 |
+| `noisy_labels` | 0.390 | 0.550 | 0.387 | 1.00 |
+| `continuity_smoothing` | 0.442 | 0.628 | 0.437 | 1.00 |
+
+The LLM outputs were structurally reliable: all 60 LLM responses parsed correctly. The main weakness was not formatting, but conservatism: `llm_no_profile` left labels unchanged in 26/30 cases, improved 3, and worsened 1. `llm_profile` left labels unchanged in 28/30 cases, improved 1, and worsened 1.
+
+### Dataset Split
+
+| Dataset | Speakers | Method | Mean WDER | Mean cpWER |
+|---|---:|---|---:|---:|
+| AMI SDM | 4 | `noisy_labels` | 0.443 | 0.630 |
+| AMI SDM | 4 | `llm_no_profile` | 0.443 | 0.630 |
+| AMI SDM | 4 | `llm_profile` | 0.443 | 0.630 |
+| AMI SDM | 4 | `continuity_smoothing` | 0.453 | 0.626 |
+| Simsamu | 2 | `noisy_labels` | 0.310 | 0.431 |
+| Simsamu | 2 | `llm_no_profile` | 0.273 | 0.357 |
+| Simsamu | 2 | `llm_profile` | 0.287 | 0.379 |
+| Simsamu | 2 | `continuity_smoothing` | 0.425 | 0.631 |
+
+The only meaningful improvement was in the two-speaker Simsamu condition. In AMI, the LLM generally copied noisy labels, even when profiles were supplied. That directly weakens the broad hypothesis for many-speaker meeting settings.
+
+### Statistical Tests
+
+Paired tests compared each correction method to `noisy_labels` across 30 case pairs.
+
+| Comparison | Mean WDER reduction | 95% bootstrap CI | Test | p | Holm p | Effect size dz |
+|---|---:|---:|---|---:|---:|---:|
+| Noisy vs continuity smoothing | -0.052 | [-0.101, -0.008] | Wilcoxon | 0.978 | 0.978 | -0.388 |
+| Noisy vs LLM no-profile | 0.015 | [-0.009, 0.045] | Wilcoxon | 0.137 | 0.410 | 0.187 |
+| Noisy vs LLM profile | 0.009 | [-0.001, 0.029] | Wilcoxon | 0.327 | 0.655 | 0.173 |
+
+No correction method achieved statistically significant WDER improvement over noisy labels.
+
+### Figures
+
+![WDER by method](figures/wder_by_method.png)
+
+![WDER reduction by dataset](figures/wder_reduction_by_dataset.png)
+
+![LLM parse success](figures/llm_parse_success.png)
+
+## 5. Analysis & Discussion
+
+The hypothesis is only weakly supported. Real LLM relabeling can improve a small number of speaker-attribution cases without modifying transcript words, but this pilot did not show reliable improvement in four-speaker AMI meetings. The strongest positive sign is that the LLM no-profile condition reduced Simsamu mean WDER from 0.310 to 0.273 and cpWER from 0.431 to 0.357.
+
+The AMI result is important. Many AMI speaker IDs are generic after anonymization, and short meeting snippets do not provide stable lexical identities. When the LLM has no acoustic evidence and weak profile evidence, it tends to avoid changing labels. This behavior is safer than hallucinating, but it limits correction value.
+
+Continuity smoothing performed poorly overall, especially in Simsamu low-noise cases, because true alternating speaker turns can look like isolated changes. This confirms that simple temporal smoothing is not a reliable substitute for speaker-aware reasoning.
+
+Compared with the literature, the result is consistent with DiarizationLM's warning that zero-shot or lightly prompted LLM correction may degrade or fail to improve, while fine-tuned transcript-preserving models can help. It also aligns with language-model diarization papers showing that lexical context is useful when combined with acoustic speaker probabilities, not as a complete replacement.
+
+## 6. Limitations
+
+- The AMI shard lacks manual word transcripts, so ASR words are pseudo-reference text. The evaluation measures speaker-attribution correction, not ASR word accuracy.
+- The pilot includes only five windows and 30 noisy cases. This is enough to expose failure modes, not enough for a definitive benchmark claim.
+- Noise injection is controlled and seeded, but still a simulation of ASR/diarization errors rather than output from a full WhisperX + pyannote cascade.
+- Speaker profiles are short and text-only. Real multi-person identification likely needs acoustic embeddings, speaker enrollment, or longer history.
+- `gpt-4.1-mini` was conservative under the prompt design. Other models or prompts may behave differently.
+- cpWER was implemented locally as a small-speaker exact-permutation metric, not via MeetEval, because local MeetEval installation had compiler constraints in the resource-gathering phase.
+
+## 7. Conclusions & Next Steps
+
+The answer to the research question is: LLMs can help multi-person identification in some transcript-context settings, but this pilot does not show robust improvement for many-speaker meetings using naive API prompting alone. The most defensible conclusion is that LLMs should be used as a transcript-preserving correction layer only when paired with stronger speaker evidence.
+
+Recommended next experiments:
+
+1. Run the same harness on full AMI/ICSI with manual transcripts and real WhisperX + pyannote outputs.
+2. Add acoustic confidence and speaker-embedding summaries to the LLM prompt rather than text profiles alone.
+3. Fine-tune or adapt an open DiarizationLM model on meeting-style data, then compare to zero-shot API prompting.
+4. Evaluate current OpenAI diarization-capable transcription models as an end-to-end baseline if available for the deployment setting.
+5. Replace local cpWER with MeetEval once a compiler is available.
+
+## Reproducibility
+
+Environment setup:
+
+```bash
+source .venv/bin/activate
+uv add openai matplotlib scikit-learn statsmodels seaborn
+python src/run_experiment.py
+```
+
+Primary outputs:
+
+- `planning.md`: motivation, novelty, and preregistered experiment plan.
+- `src/run_experiment.py`: full experiment harness.
+- `results/cache/asr_transcriptions.jsonl`: cached real ASR outputs.
+- `results/model_outputs/llm_outputs.jsonl`: cached real LLM outputs.
+- `results/metrics_by_case.csv`: per-case metrics.
+- `results/aggregate_metrics.csv`: aggregate method results.
+- `results/statistical_tests.csv`: paired tests and effect sizes.
+- `results/error_analysis.csv`: per-case improvement/worsening categories.
+- `results/usage_summary.json`: API token/audio usage and estimated cost.
+- `figures/`: generated visualizations.
+
+Random seeds were fixed at 42 for experiment setup and `[101, 202]` for noise injection. Re-running the script with existing caches should reproduce the same metrics without additional API calls.
+
+## References
+
+- Wang et al., "DiarizationLM: Speaker Diarization Post-Processing with Large Language Models", Interspeech 2024. Local PDF: `papers/2401.03506_diarizationlm.pdf`.
+- Park et al., "Enhancing Speaker Diarization with Large Language Models", 2023/2024. Local PDF: `papers/2309.05248_enhancing_speaker_diarization_llms.pdf`.
+- Li et al., "DM-ASR", 2026. Local PDF: `papers/2604.22467_dm_asr.pdf`.
+- von Neumann et al., "MeetEval", 2023. Local PDF: `papers/2307.11394_meeteval.pdf`.
+- OpenAI model pricing for `gpt-4.1-mini`: <https://developers.openai.com/api/docs/models/gpt-4.1-mini>.
+- OpenAI transcription pricing: <https://developers.openai.com/api/docs/pricing>.
+
+
+════════════════════════════════════════════════════════════════════════════════
+                            RESEARCH PLAN
+════════════════════════════════════════════════════════════════════════════════
+
+# Research Plan: LLMs for Multi-Person Identification
+
+## Motivation & Novelty Assessment
+
+### Why This Research Matters
+Multi-speaker meetings remain difficult for ASR pipelines because word recognition, timestamps, speaker turns, and speaker identity are coupled: when speakers overlap or many people participate, small timing or clustering errors turn into "who said what" errors. Improving speaker attribution benefits meeting transcription, clinical or legal conversation review, contact-center analytics, and any downstream system that relies on accurate participant accountability.
+
+### Gap in Existing Work
+The gathered literature shows strong LLM gains for diarization post-processing, especially DiarizationLM on Fisher and CallHome, but many published gains are strongest on two-speaker telephone conversations or require large proprietary speech-LLM training. The local resources include an AMI SDM shard with four-speaker meeting timelines but no reference words, so a realistic lightweight experiment should isolate whether real LLMs can improve text-level speaker attribution under controlled many-speaker diarization noise before scaling to full cpWER/tcpWER benchmarks.
+
+### Our Novel Contribution
+This study builds a reproducible pilot benchmark from local AMI and Simsamu audio: segments are transcribed with a real ASR API, assigned ground-truth segment speakers from downloaded diarization annotations, then corrupted with timestamp- and overlap-aware diarization noise. We compare noisy speaker labels, a deterministic continuity smoother, zero-profile LLM relabeling, and profile-conditioned LLM relabeling while preserving ASR words and evaluating word-level speaker attribution.
+
+### Experiment Justification
+- Experiment 1: Transcribe local AMI/Simsamu segments with real ASR. This grounds the benchmark in actual audio instead of invented transcripts.
+- Experiment 2: Inject speaker-label noise that increases with overlap, short turns, and speaker changes. This approximates the known failure surface of multi-person ASR/diarization pipelines.
+- Experiment 3: Compare noisy labels, heuristic smoothing, and LLM relabeling. This tests whether language context adds value beyond simple temporal continuity.
+- Experiment 4: Compare two-speaker Simsamu windows against four-speaker AMI windows. This directly probes the user concern that performance degrades as speakers become many.
+
+## Research Question
+Can real large language models improve multi-person speaker identification from ASR transcripts when baseline speaker labels are noisy, especially in four-speaker meeting-style conversations?
+
+## Background and Motivation
+Prior work indicates that language context can correct speaker-attribution errors, but zero-shot LLM post-processing can also hallucinate or degrade transcripts. The practical question is not whether an LLM can replace diarization from audio, but whether it can act as a transcript-preserving correction layer over ASR plus diarization outputs. This plan follows the DiarizationLM principle of preserving words while changing speaker labels.
+
+## Hypothesis Decomposition
+- H1: LLM relabeling lowers word diarization error rate (WDER) relative to noisy ASR/diarization labels.
+- H2: Profile-conditioned LLM relabeling outperforms zero-profile LLM relabeling because speaker-specific lexical/context cues provide identity anchors.
+- H3: Gains are smaller or less stable in four-speaker AMI windows than two-speaker Simsamu windows because candidate-speaker ambiguity grows.
+- H4: LLM relabeling must preserve transcripts; a method that lowers WDER by changing or dropping words is not acceptable.
+
+Independent variables are dataset family (AMI four-speaker vs Simsamu two-speaker), noise level (low/medium/high), and correction method. Dependent variables are WDER, cpWER-style speaker-attributed WER, speaker count MAE, parse failure rate, and transcript preservation rate.
+
+## Proposed Methodology
+
+### Approach
+Use local diarization annotations as speaker ground truth, real ASR transcripts for selected audio segments, and real LLM API calls for speaker relabeling. The experiment is segment-level for LLM output but word-weighted for evaluation: every word in a segment inherits the segment speaker label, allowing WDER-style comparison while avoiding artificial word edits.
+
+### Experimental Steps
+1. Load AMI SDM sample parquet and Simsamu saved dataset; summarize speaker counts, turn durations, and overlap indicators.
+2. Select a small set of windows with enough speaker diversity and segment durations suitable for API transcription.
+3. Transcribe selected audio segments with OpenAI ASR, caching all responses for reproducibility and cost control.
+4. Build evaluation windows with unscored speaker profile turns and scored test turns.
+5. Corrupt test-turn speaker labels with seeded noise that depends on base noise level, overlap, short duration, and speaker-change boundaries.
+6. Run baselines: raw noisy labels and deterministic continuity smoothing.
+7. Run LLM conditions: no-profile relabeling and profile-conditioned relabeling using JSON-only speaker outputs.
+8. Compute metrics and paired statistical tests; generate result tables and figures.
+
+### Baselines
+- Noisy labels: the simulated ASR/diarization output.
+- Continuity smoother: fixes isolated single-turn speaker changes when neighboring turns agree.
+- LLM no-profile: real LLM relabeling using only the transcript and noisy speaker labels.
+- LLM profile: real LLM relabeling using the same input plus clean profile turns per speaker.
+
+### Evaluation Metrics
+- WDER: word-weighted speaker-label error rate on scored turns.
+- cpWER-style score: minimum-permutation concatenated word error rate by speaker.
+- Speaker count MAE: absolute error in the number of speakers used in a window.
+- Transcript edit rate / preservation: checks whether the LLM condition changed words; expected to be zero because JSON speaker-only output is requested.
+- Parse failure rate: fraction of LLM outputs that could not be parsed or had missing segment IDs.
+
+### Statistical Analysis Plan
+Use paired tests by window and noise condition. For WDER, compare each correction method against noisy labels using Wilcoxon signed-rank tests if normality is not supported; otherwise use paired t-tests. Report bootstrap 95% confidence intervals for mean WDER differences and Cohen's d for paired differences. Apply Holm correction across the main method comparisons.
+
+## Expected Outcomes
+Results support the hypothesis if LLM profile relabeling significantly reduces WDER versus noisy labels without transcript changes, and if the effect remains positive in AMI four-speaker windows. Results refute or weaken the hypothesis if LLM relabeling fails to beat continuity smoothing, increases parse failures, or only helps in two-speaker windows.
+
+## Timeline and Milestones
+- Setup and dataset validation: 10-20 minutes.
+- Script implementation: 60-90 minutes.
+- ASR and LLM experiment runs: 60-90 minutes, depending on API latency.
+- Analysis and visualization: 30-45 minutes.
+- Final report and validation: 20-30 minutes.
+
+## Potential Challenges
+- Local AMI annotations lack reference transcripts; ASR-derived text is a pseudo-reference for words, so conclusions focus on speaker attribution rather than ASR word accuracy.
+- API transcription may fail on very short or noisy segments; the loader filters short segments and caches failures.
+- Zero-shot LLM outputs may be malformed; the harness validates JSON and falls back to noisy labels while counting parse failures.
+- Small sample size limits external validity; this is a pilot, not a full AMI benchmark.
+
+## Success Criteria
+The research session succeeds if it produces a runnable experiment harness, cached real ASR/LLM outputs, statistical comparisons across baselines, figures/tables, and a final report that clearly states whether LLM speaker relabeling improved multi-person identification under the tested conditions.
+
+
+════════════════════════════════════════════════════════════════════════════════
+                          LITERATURE REVIEW
+════════════════════════════════════════════════════════════════════════════════
+
+# Literature Review: LLMs for Multi-Person Identification in Multi-Speaker ASR
+
+## Review Scope
+
+### Research Question
+
+Can large language models improve multi-person or multi-speaker identification when ASR and diarization systems struggle in conversations with many speakers, overlap, poor timestamps, or long context?
+
+### Inclusion Criteria
+
+- Papers on speaker diarization, speaker-attributed ASR, multi-talker ASR, or speaker identification.
+- Work using LLMs, pretrained language models, or language-model context for speaker assignment.
+- Benchmarks and tools relevant to AMI, CallHome, Fisher, AliMeeting, AISHELL-4, ICSI, or meeting transcription.
+- Recent work from 2023-2026 plus foundational baselines/tools.
+
+### Exclusion Criteria
+
+- Single-speaker ASR papers without speaker attribution.
+- Speaker verification papers that do not connect to conversational identification or diarization.
+- Non-reproducible resources with no accessible paper, code, or dataset path.
+
+### Search Log
+
+| Date | Query/Source | Results | Notes |
+|------|--------------|---------|-------|
+| 2026-07-06 | paper-finder diligent query | stalled | Local service process did not return output; manual search used. |
+| 2026-07-06 | arXiv / web: LLM speaker diarization ASR | 15 papers downloaded | Found DiarizationLM, DM-ASR, SpeakerLM, JEDIS-LLM, LLM SOT, pyannote, MeetEval. |
+| 2026-07-06 | Hugging Face dataset metadata | 6 datasets screened | AMI, VoxConverse, CallHome, ICSI, Simsamu, AVA-AVD. |
+| 2026-07-06 | GitHub/code search | 6 repos cloned | DiarizationLM, LLM-Diarize-ASR-Agnostic, diarizers, pyannote, WhisperX, MeetEval. |
+
+## Key Papers
+
+### DiarizationLM
+
+- Authors: Quan Wang, Yiling Huang, Guanlong Zhao, Evan Clark, Wei Xia, Hank Liao
+- Year: 2024
+- Source: arXiv/Interspeech
+- Methodology: Represents ASR plus diarization outputs as compact speaker-token text, prompts or fine-tunes an LLM to correct word-speaker assignments, then uses Transcript-Preserving Speaker Transfer (TPST) to keep the original ASR words while transferring speaker labels.
+- Datasets: Fisher and CallHome English.
+- Results: A fine-tuned PaLM 2-S reduced WDER from 5.32 to 2.37 on Fisher and from 7.72 to 4.25 on CallHome. Zero-shot/one-shot models often degraded results, mainly through transcript deletion or hallucination.
+- Code: `code/google_speaker_id/DiarizationLM/`
+- Relevance: Strongest directly applicable baseline for LLM post-processing of multi-person identification.
+
+### Enhancing Speaker Diarization with LLMs
+
+- Authors: Tae Jin Park, Kunal Dhawan, Nithin Koluguri, Jagadeesh Balam
+- Year: 2023/2024
+- Methodology: Adds lexical probabilities from an n-gram LM or GPT-style LLM into a joint acoustic and lexical beam search over speaker assignments.
+- Datasets: AMI-MH and CallHome English subsets.
+- Results: Up to 39.8 percent relative delta-SA-WER improvement over timestamp matching. LLM context was more useful for estimating speaker probability than n-gram context.
+- Relevance: Shows language context can be used during decoding, not only as post-processing.
+
+### LLM-Based Serialized Output Training for Multi-Talker ASR
+
+- Authors: Mohan Shi et al.
+- Year: 2024
+- Methodology: Uses WavLM speech encoder plus Vicuna-7B decoder to generate serialized-output multi-speaker transcripts separated by speaker-change symbols.
+- Datasets: LibriMix and AMI-SDM.
+- Results: On AMI-SDM, LLM architecture achieved 21.0 cpWER, improved to 20.4 with beam search, outperforming an AED model trained on much more supervised data.
+- Relevance: Useful for overlap-heavy conditions where speaker changes and transcript content are learned jointly.
+
+### Diarization-Aware Multi-Speaker ASR via LLMs
+
+- Authors: Yuke Lin, Ming Cheng, Ze Li, Beilong Tang, Ming Li
+- Year: 2025
+- Methodology: Uses structured triplets of speaker embedding, start time, and end time to condition Qwen2.5-3B for segment-level transcription.
+- Datasets: AliMeeting and MLC-SLM multilingual challenge data.
+- Results: Strong tcpWER improvements over the official MLC-SLM baseline, reducing average dev tcpWER from 76.12 to 24.95.
+- Relevance: Supports the hypothesis that explicit diarization priors plus LLM generation can outperform pure pipelines.
+
+### DM-ASR
+
+- Authors: Li Li, Ming Cheng, Weixin Zhu, Yannan Wang, Juan Liu, Ming Li
+- Year: 2026
+- Methodology: Reformulates multi-speaker ASR as multi-turn dialogue generation. Each turn asks the LLM to transcribe one diarization-provided speaker/time segment, with optional word-level timestamp tokens.
+- Datasets: AliMeeting, AISHELL-4, AMI-IHM, AMI-SDM, Fisher.
+- Results: DM-ASR with S2SND and 1.7B LLM reached AMI-IHM cpWER 16.40 and Fisher cpWER 15.91; word-level timestamp supervision improved both structured prediction and transcription quality.
+- Relevance: Best template for a small-model experiment using diarization as structural prior.
+
+### SpeakerLM
+
+- Authors: Han Yin et al.
+- Year: 2025/2026
+- Methodology: Unified multimodal LLM for speaker diarization and recognition with flexible speaker registration modes.
+- Datasets: AliMeeting, AISHELL4, AISHELL5, large in-house data, simulated mixtures.
+- Results: With 7,638.95 hours of training data, SpeakerLM reached AliMeeting cpCER 16.05 and AISHELL4 cpCER 18.37, outperforming cascaded baselines.
+- Relevance: Shows the high-scale end-to-end direction, but requires far more data and compute than a resource-constrained project.
+
+### JEDIS-LLM
+
+- Authors: Mohan Shi, Xiong Xiao, Ruchao Fan, Shaoshi Ling, Jinyu Li
+- Year: 2025
+- Methodology: Streamable joint ASR and diarization with a Speaker Prompt Cache for global speaker consistency across chunks.
+- Datasets: AMI, ICSI, Fisher, internal data, VoxCeleb simulations.
+- Results: In long-form settings, streaming JEDIS-LLM with cache updates outperformed DiarizationLM on WDER/cpWER for CH109 and Fisher.
+- Relevance: Important for long recordings and many chunks, but training setup is heavy.
+
+### Language Modeling and Speaker Identification Papers
+
+- India et al. (2025) show that combining linguistic content with acoustic scores can reduce word-level DER sharply in structured telephonic interviews.
+- Zamana et al. (2024) show pretrained LMs and GPT-4 can identify named speakers from transcript context when names are introduced, improving recall on some conversational data.
+- These papers support adding text-only speaker role/name inference as an auxiliary task, but they are not complete diarization systems.
+
+## Common Methodologies
+
+- LLM post-processing: convert diarized ASR output into speaker-tagged text and ask/fine-tune an LLM to correct speaker assignments. Strong when fine-tuned; risky zero-shot.
+- Lexical beam search: combine acoustic diarization probabilities with LM probabilities over likely speakers for each word.
+- Serialized-output multi-talker ASR: generate a single ordered transcript with speaker-change markers.
+- Diarization-aware prompting: feed speaker/time cues from a diarizer into the LLM, allowing it to focus on "what" while the diarizer supplies "who/when".
+- Unified Speech-LLM: jointly predict speech content and speaker attribution from audio, often requiring large models and large training data.
+
+## Standard Baselines
+
+- Cascaded ASR plus diarization: WhisperX or Whisper plus pyannote/DiariZen, then timestamp-based speaker-word assignment.
+- pyannote.audio: strong open diarization baseline; requires HF model terms/token for current pretrained pipelines.
+- DiariZen / S2SND / Sortformer / Meta-CAT: strong modern diarization or speaker-aware baselines reported in recent papers.
+- DiarizationLM: strongest LLM post-processing baseline with open code and model artifacts.
+- MeetEval: standard cpWER/tcpWER evaluation tool, though local installation needs a C++ compiler.
+
+## Evaluation Metrics
+
+- DER: speaker diarization error rate; measures false alarm, miss, and speaker confusion over time.
+- WDER: word diarization error rate; measures speaker assignment errors for words.
+- cpWER/cpCER: minimum-permutation concatenated WER/CER across speakers; captures speaker consistency plus lexical errors.
+- tcpWER/tcpCER: time-constrained cpWER/cpCER; adds timestamp plausibility and is better for "who said what when".
+- SA-WER: speaker-attributed WER with stricter speaker mapping.
+- Speaker count accuracy or speaker count MAE: useful when number of speakers is unknown.
+
+## Datasets in the Literature
+
+- AMI: primary English meeting benchmark; many papers evaluate IHM and SDM variants.
+- Fisher and CallHome: two-speaker telephone benchmarks used by DiarizationLM and JEDIS-LLM.
+- AliMeeting and AISHELL-4: Mandarin multi-speaker meeting benchmarks with high overlap.
+- ICSI: long meeting data with up to many speakers, useful for testing "many speaker" behavior.
+- VoxConverse: web video diarization, useful for out-of-domain generalization.
+- LibriMix: simulated overlap benchmark, useful but less realistic than AMI/ICSI.
+- Simsamu: small local sanity dataset for diarization format and loader validation.
+
+## Gaps and Opportunities
+
+- Many LLM correction results are strongest on two-speaker telephone data, while the hypothesis emphasizes many-speaker ASR limitations.
+- Zero-shot LLM correction can hallucinate, delete words, or alter transcript content; transcript-preserving transfer is important.
+- Full end-to-end Speech-LLMs work well but usually require large proprietary data and substantial GPU budgets.
+- Explicit timestamps are under-modeled in older LLM speaker-attribution papers; tcpWER/tcpCER should be included.
+- Speaker names/roles are promising but lack standardized datasets and metrics.
+
+## Recommendations for the Experiment Runner
+
+- Start with a practical cascade baseline: WhisperX for ASR/word timestamps and pyannote for diarization, using AMI SDM sample first and full AMI/ICSI later.
+- Add DiarizationLM-style post-processing using the open Google code. Preserve ASR text with TPST and evaluate WDER/cpWER.
+- For the core hypothesis, compare three conditions: raw timestamp assignment, LLM-corrected speaker labels, and diarization-aware prompting with speaker/time segments.
+- Use AMI SDM or ICSI as the primary many-speaker benchmark. Use CallHome only as a secondary two-speaker comparison if credentials are available.
+- Report WDER, cpWER, and speaker count error at minimum. Add tcpWER after installing MeetEval with a C++ compiler.
+- Avoid relying on zero-shot LLM correction for final claims; include it only as an ablation because the literature shows it can degrade results.
+
+
+════════════════════════════════════════════════════════════════════════════════
+                          PAPER REQUIREMENTS
+════════════════════════════════════════════════════════════════════════════════
+
+Generate a complete academic paper with the following structure:
+
+1. TITLE
+   - Clear, specific, informative
+   - Should convey main finding or contribution
+
+2. AUTHOR
+   - Use this exact author line in the \author{} block: Qianyi Li and NeuriCo
+
+3. ABSTRACT (150-250 words)
+   - Problem statement
+   - Approach
+   - Key results
+   - Significance
+
+4. INTRODUCTION
+   - Research problem and motivation
+   - Gap in existing work
+   - Our contribution (be specific)
+   - Paper organization
+
+5. RELATED WORK
+   - Organized by theme/approach
+   - Position our work relative to prior work
+   - Cite papers from literature review
+
+6. METHODOLOGY
+   - Clear description of approach
+   - Experimental setup
+   - Datasets used
+   - Evaluation metrics
+   - Baselines
+
+7. RESULTS
+   - Present results with tables and figures
+   - Statistical analysis
+   - Comparison to baselines
+   - Ablation studies (if applicable)
+
+8. DISCUSSION
+   - Interpretation of results
+   - Limitations
+   - Broader implications
+
+9. CONCLUSION
+   - Summary of contributions
+   - Key findings
+   - Future work
+
+10. REFERENCES
+   - BibTeX format
+   - All cited papers
+
+════════════════════════════════════════════════════════════════════════════════
+                          OUTPUT FORMAT
+════════════════════════════════════════════════════════════════════════════════
+
+Create a MODULAR LaTeX project with the following directory structure:
+
+paper_draft/
+├── main.tex              # Main file that imports all sections
+├── references.bib        # BibTeX references
+├── sections/
+│   ├── abstract.tex      # Abstract content
+│   ├── introduction.tex  # Introduction section
+│   ├── related_work.tex  # Related work section
+│   ├── methodology.tex   # Methodology section
+│   ├── results.tex       # Results section
+│   ├── discussion.tex    # Discussion section
+│   └── conclusion.tex    # Conclusion section
+├── figures/              # Directory for any generated figures
+├── tables/               # Directory for complex standalone tables
+└── appendix/             # Directory for appendix sections (if needed)
+
+INSTRUCTIONS:
+1. First, create the directory structure above (mkdir -p paper_draft/sections paper_draft/figures paper_draft/tables paper_draft/appendix)
+2. Write main.tex using the EXACT preamble for NEURIPS:
+
+   \documentclass{article}
+   \usepackage[final]{neurips_2025}  % NEURIPS style (neurips_2025.sty is in paper_draft/)
+   \usepackage[hidelinks]{hyperref}  % REQUIRED: clickable links
+   \usepackage{booktabs}  % REQUIRED: professional tables
+   \usepackage{graphicx}
+   \usepackage{amsmath,amssymb}
+
+   % Import command files
+   \input{commands/math}
+   \input{commands/general}
+   \input{commands/macros}
+
+   % Use this bibliography style:
+   \bibliographystyle{plainnat}
+
+   \author{Qianyi Li and NeuriCo}
+
+   - Use \input{sections/...} to include each section
+   - Use \bibliography{references} for references
+3. Write each section file with COMPLETE content (no placeholders)
+4. Each section file should include its \section{} command
+5. Write references.bib with all citations in BibTeX format
+6. After writing all files, compile the paper:
+   cd paper_draft && pdflatex -interaction=nonstopmode main.tex && bibtex main && pdflatex -interaction=nonstopmode main.tex && pdflatex -interaction=nonstopmode main.tex
+
+This modular structure allows humans to easily:
+- Edit individual sections without navigating a large file
+- Track changes per section
+- Reuse sections across different paper versions
+
+════════════════════════════════════════════════════════════════════════════════
+                          QUALITY REQUIREMENTS
+════════════════════════════════════════════════════════════════════════════════
+
+- Academic tone throughout
+- All claims must be supported by data from the experiment report
+- Proper citations using \cite{} commands
+- Clear figures and tables with proper captions
+- NO placeholder text - every section must have real content
+- The paper MUST compile without errors
+- If compilation fails, debug and fix the LaTeX errors
+
+════════════════════════════════════════════════════════════════════════════════
+                          LAB WRITING STYLE
+════════════════════════════════════════════════════════════════════════════════
+
+Follow these lab-specific conventions to match our paper style:
+
+1. LANGUAGE STYLE:
+   - Use active voice: "We propose", "We examine", "We focus on"
+   - Be direct and confident: "Our main question is...", "We hypothesize that..."
+   - State things clearly and simply - prefer plain language over jargon
+   - Use bold questions as paragraph organizers: {\bf what is X?}
+   - Include specific quantitative claims: "8.97% over baseline"
+   - Avoid fancy wording: "utilize" → "use", "facilitate" → "help"
+
+2. INTRODUCTION STRUCTURE:
+   - Engaging hook (get to the point quickly)
+   - Problem importance
+   - Gap identification
+   - Your approach with method figure reference
+   - Quantitative preview of results
+   - Contribution bullets (3-4 items, action verbs)
+
+3. CONTRIBUTION LISTS:
+   \begin{itemize}[leftmargin=*,itemsep=0pt,topsep=0pt]
+       \item We propose...
+       \item We conduct...
+       \item We complement...
+   \end{itemize}
+
+4. MODULAR COMMANDS STRUCTURE:
+   Command templates are pre-copied to paper_draft/commands/:
+   - math.tex: Math notation macros
+   - general.tex: Formatting macros
+   - macros.tex: Project-specific term definitions (customize this for your paper)
+
+   In main.tex, include:
+   \input{commands/math}
+   \input{commands/general}
+   \input{commands/macros}
+
+5. REFERENCE CONVENTIONS:
+   Use reference macros from math.tex:
+   - \figref{fig:name} for "figure 1" (lowercase, in-sentence)
+   - \Figref{fig:name} for "Figure 1" (capitalized, start of sentence)
+   - \secref{sec:name} for "section 2"
+
+6. TEXT FORMATTING:
+   - Use \para{Header text} for bold paragraph headers
+   - Define method/dataset names with \textsc and \xspace:
+     \newcommand{\methodname}{\textsc{MethodName}\xspace}
+
+7. TABLE FORMATTING:
+   - Use booktabs package (no vertical lines)
+   - Use \resizebox{\textwidth}{!}{...} for wide tables
+   - Use @{} to remove padding at table edges
+   - Use \cmidrule(lr){x-y} for sub-headers
+   - Use \textsc{} for dataset/method names in headers
+   - Bold best results with {\bf ...}
+
+8. FIGURE FORMATTING:
+   - Use 0.32\textwidth for 3-column subfigures
+   - Use 0.95\linewidth for full-width figures
+   - Use \input{figures/legend} for shared legends
+   - Write self-contained captions explaining key observations
+
+9. RESULTS PRESENTATION:
+   - Define \increase and \decrease for colored arrows (green up, red down)
+   - Bold best results in tables
+   - Report confidence intervals when available
+
+10. ALGORITHM STYLING:
+    - Use algpseudocode with [noend]
+    - Use \triangleright for comments
+
+11. HYPERLINKS (REQUIRED):
+    - Always use \usepackage[hidelinks]{hyperref} or with colored links
+    - All citations, section refs, figure refs, table refs must be clickable
+    - This is essential for reader navigation
+
+════════════════════════════════════════════════════════════════════════════════
+                          WORKFLOW: REVIEW AND REFLECT
+════════════════════════════════════════════════════════════════════════════════
+
+Before calling finish, you MUST complete these review steps:
+
+1. REVIEW RESOURCES (at the start):
+   - Read .codex/skills/paper-writer/SKILL.md for detailed guidance
+   - Study templates/paper_writing/lab_style_guide.md for style conventions
+   - Browse paper_examples/ for formatting and language patterns
+
+2. SELF-REFLECTION (before finishing):
+   After writing all sections, review your work against these criteria:
+
+   LANGUAGE CHECK:
+   - [ ] Is the writing clear and jargon-free?
+   - [ ] Are claims specific with quantitative support?
+   - [ ] Is active voice used throughout?
+
+   FORMATTING CHECK:
+   - [ ] Does main.tex include \input{commands/math}, \input{commands/general}, \input{commands/macros}?
+   - [ ] Is hyperref package included for clickable references?
+   - [ ] Do tables use booktabs (no vertical lines)?
+   - [ ] Are best results bolded in tables?
+   - [ ] Are figures/tables properly captioned?
+
+   STRUCTURE CHECK:
+   - [ ] Does introduction follow: hook → importance → gap → approach → preview → contributions?
+   - [ ] Are contribution bullets specific with action verbs?
+   - [ ] Does the paper compile without errors?
+
+3. FIX ISSUES:
+   - Address any issues found in the self-reflection
+   - Re-compile and verify the PDF looks correct
+
+Only after completing this review should you consider the paper finished.

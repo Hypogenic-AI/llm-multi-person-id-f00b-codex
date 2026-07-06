@@ -1,0 +1,6 @@
+\section{Conclusion}
+\label{sec:conclusion}
+
+We tested whether a real API-based LLM can improve multi-person speaker identification from noisy ASR-style transcripts while preserving every transcript word. In a controlled pilot over local \amisdm and \simsamu audio, no-profile LLM relabeling reduced mean \wder from 0.390 to 0.375, but the improvement was not statistically significant after Holm correction. The LLM was reliable as a structured output system, with 100\% parse success, but conservative as a speaker corrector.
+
+The key finding is that prompted text-only LLM relabeling helps only weakly and does not fix four-speaker meeting attribution in this setting. Future work should run the same harness on full AMI and ICSI with manual transcripts, replace simulated noise with real WhisperX plus pyannote outputs, add acoustic confidence and speaker-embedding summaries to the prompt, and compare zero-shot API prompting against fine-tuned transcript-preserving models.

@@ -1,0 +1,43 @@
+{
+  "created_at": "2026-07-06T06:53:04.403473+00:00",
+  "python": "3.12.8 (main, Dec 19 2024, 14:33:20) [Clang 18.1.8 ]",
+  "packages": {
+    "numpy": "2.2.6",
+    "pandas": "3.0.3",
+    "scipy": "1.18.0",
+    "scikit-learn": "1.9.0",
+    "statsmodels": "0.14.6",
+    "openai": "2.44.0",
+    "matplotlib": "3.11.0",
+    "seaborn": "0.13.2",
+    "datasets": "5.0.0",
+    "pyarrow": "24.0.0"
+  },
+  "gpu": "name, memory.total [MiB], memory.free [MiB]\nNVIDIA RTX A6000, 49140 MiB, 39395 MiB\nNVIDIA RTX A6000, 49140 MiB, 48541 MiB\nNVIDIA RTX A6000, 49140 MiB, 295 MiB\nNVIDIA RTX A6000, 49140 MiB, 48541 MiB",
+  "workspace": "/workspaces/llm-multi-person-id-f00b-codex",
+  "config": {
+    "seed": 42,
+    "max_ami_windows": 3,
+    "max_simsamu_windows": 2,
+    "pool_size": 18,
+    "eval_turns": 10,
+    "profiles_per_speaker": 1,
+    "min_duration": 1.2,
+    "max_duration": 12.0,
+    "noise_seeds": [
+      101,
+      202
+    ],
+    "api_sleep": 0.05,
+    "asr_model_fallbacks": [
+      "gpt-4o-mini-transcribe",
+      "gpt-4o-transcribe",
+      "whisper-1"
+    ],
+    "llm_model_fallbacks": [
+      "gpt-4.1-mini",
+      "gpt-4o-mini",
+      "gpt-4.1"
+    ]
+  }
+}

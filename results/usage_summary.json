@@ -1,0 +1,20 @@
+{
+  "llm_model": "gpt-4.1-mini",
+  "llm_calls": 60,
+  "llm_prompt_tokens": 63822,
+  "llm_completion_tokens": 19800,
+  "llm_input_price_per_million_usd": 0.4,
+  "llm_output_price_per_million_usd": 1.6,
+  "llm_estimated_cost_usd": 0.057209,
+  "asr_model": "gpt-4o-mini-transcribe",
+  "asr_segments": 90,
+  "asr_audio_seconds": 343.28,
+  "asr_audio_minutes": 5.7213,
+  "asr_price_per_minute_usd": 0.003,
+  "asr_estimated_cost_usd": 0.017164,
+  "total_estimated_api_cost_usd": 0.074373,
+  "pricing_sources": [
+    "https://developers.openai.com/api/docs/models/gpt-4.1-mini",
+    "https://developers.openai.com/api/docs/pricing"
+  ]
+}

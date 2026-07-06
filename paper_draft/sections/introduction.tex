@@ -1,0 +1,20 @@
+\section{Introduction}
+\label{sec:introduction}
+
+Meeting transcripts fail quietly when speaker labels are wrong. The words may look fluent, but a downstream reader, reviewer, or clinical analyst still needs to know who made each claim, asked each question, or accepted each decision. This speaker-attribution problem becomes harder as conversations include more people, more overlap, shorter turns, and less stable timestamps.
+
+Large language models (LLMs) are a natural candidate for correcting these errors because speaker identity is not only acoustic. People reveal roles, preferences, questions, and discourse patterns through text. Prior work has shown that language context can improve diarization and speaker-attributed ASR, especially when LLMs are fine-tuned for transcript-preserving speaker transfer or combined with acoustic speaker probabilities~\cite{wang2024diarizationlm,park2023enhancing,li2026dmasr}. The open practical question is smaller but important: can a lightweight API-based LLM relabeler help when we have an ordinary noisy transcript and no custom speech-LLM training?
+
+\para{What does the LLM know without audio?} We examine this question in a controlled pilot. We build five evaluation windows from local \amisdm and \simsamu audio, transcribe real segments with \asrmodel, inject seeded speaker-label noise, and ask \relabelmodel to output speaker IDs only. The relabeler never edits transcript text. We compare raw noisy labels, a deterministic continuity smoother, zero-profile LLM relabeling, and profile-conditioned LLM relabeling. \Figref{fig:method} summarizes the pipeline.
+
+\para{Our main result is cautionary.} Across 30 window/noise cases, zero-profile LLM relabeling reduces mean \wder from 0.390 to 0.375, a 3.8\% relative reduction. This gain is not statistically significant after Holm correction (Wilcoxon one-sided $p=0.137$, Holm $p=0.410$). The LLM parses reliably, with 60/60 valid JSON outputs, but it changes few labels: no-profile relabeling leaves 26/30 cases unchanged, improves 3, and worsens 1. The four-speaker \amisdm condition shows no LLM improvement at all. The improvement comes from the two-speaker \simsamu windows, where no-profile relabeling reduces mean \wder from 0.310 to 0.273.
+
+In summary, our main contributions are:
+\begin{itemize}[leftmargin=*,itemsep=0pt,topsep=0pt]
+    \item We construct a reproducible transcript-preserving pilot benchmark from real local \amisdm and \simsamu audio, rather than invented transcripts.
+    \item We compare noisy labels, continuity smoothing, zero-profile LLM relabeling, and profile-conditioned LLM relabeling under seeded diarization-style noise.
+    \item We show that prompted LLM relabeling is structurally reliable but conservative: it improves mean \wder by 0.015 overall, yet does not significantly outperform noisy labels.
+    \item We identify a clear many-speaker failure mode: both LLM conditions exactly match noisy-label \wder in four-speaker \amisdm windows.
+\end{itemize}
+
+The rest of the paper is organized as follows. \Secref{sec:related} reviews LLM-based diarization and speaker-attributed ASR. \Secref{sec:methodology} describes the benchmark, relabeling prompts, baselines, and metrics. \Secref{sec:results} reports quantitative results and statistical tests. \Secref{sec:discussion} interprets the failure modes and limitations, and \secref{sec:conclusion} concludes with next steps.

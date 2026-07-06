@@ -1,0 +1,9 @@
+{
+  "results/metrics_by_case.csv": "f67314b18b48a2b3c37de18b49e9081a9b6fd12cef67aa68240e2783b9e49b05",
+  "results/aggregate_metrics.csv": "a15b0841de9874a44adbb687561420ba6a99fee805746dd87ba7cdb77e17081a",
+  "results/statistical_tests.csv": "486bc4a4b0626afe3323851ea753fd9ec0195d954d77abc60dbf693f6a397357",
+  "results/experiment_cases.json": "b9ab609f39f82973b1ab4e0e05523a43da13213db70dccece8d70faab14570fb",
+  "results/selected_windows.json": "5997d660602a1a8c5830b772ec7688d0f4dd933b01f8ee9e48df4a946d7bed4e",
+  "results/model_outputs/llm_outputs.jsonl": "47f704b2b9f4e1216ba66b57372ce53eccd1852c31a21f350e1e1e1f2427637b",
+  "results/cache/asr_transcriptions.jsonl": "5d3ad150e411e35f3dbcb72b21cf4b0a6361801563c5fe320d45512b4411cf11"
+}

@@ -1,0 +1,16 @@
+\begin{table}[t]
+    \centering
+    \resizebox{\textwidth}{!}{%
+    \begin{tabular}{@{}lrrrrr@{}}
+        \toprule
+        \textbf{Comparison} & \textbf{Mean WDER red.} & \textbf{95\% CI} & \textbf{Test} & \textbf{$p$} & \textbf{Holm $p$} \\
+        \midrule
+        \noisylabels vs. \smooth       & -0.052 & $[-0.101, -0.008]$ & Wilcoxon & 0.978 & 0.978 \\
+        \noisylabels vs. \llmnoprofile & {\bf 0.015} & $[-0.009, 0.045]$ & Wilcoxon & 0.137 & 0.410 \\
+        \noisylabels vs. \llmprofile   & 0.009 & $[-0.001, 0.029]$ & Wilcoxon & 0.327 & 0.655 \\
+        \bottomrule
+    \end{tabular}
+    }
+    \caption{Paired WDER tests over 30 case pairs. Positive reduction means the method improves over \noisylabels. No correction method reaches statistical significance after Holm correction.}
+    \label{tab:stats}
+\end{table}

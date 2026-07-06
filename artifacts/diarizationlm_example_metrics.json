@@ -1,0 +1,42 @@
+{
+  "utterances": [
+    {
+      "wer_insert": 15,
+      "wer_delete": 213,
+      "wer_sub": 143,
+      "wer_correct": 1388,
+      "wer_total": 1744,
+      "wder_sub": 81,
+      "wder_correct": 1450,
+      "wder_total": 1531,
+      "cpwer_insert": 50,
+      "cpwer_delete": 248,
+      "cpwer_sub": 174,
+      "cpwer_correct": 1322,
+      "cpwer_total": 1744,
+      "speaker_count_error": 0,
+      "utterance_id": "en_0638"
+    },
+    {
+      "wer_insert": 11,
+      "wer_delete": 424,
+      "wer_sub": 144,
+      "wer_correct": 1708,
+      "wer_total": 2276,
+      "wder_sub": 67,
+      "wder_correct": 1785,
+      "wder_total": 1852,
+      "cpwer_insert": 32,
+      "cpwer_delete": 445,
+      "cpwer_sub": 174,
+      "cpwer_correct": 1657,
+      "cpwer_total": 2276,
+      "speaker_count_error": 0,
+      "utterance_id": "en_4157"
+    }
+  ],
+  "WER": 0.236318407960199,
+  "WDER": 0.0437481525273426,
+  "cpWER": 0.27935323383084576,
+  "SpkCntMAE": 0.0
+}

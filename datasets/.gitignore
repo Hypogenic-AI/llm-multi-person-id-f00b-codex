@@ -1,0 +1,14 @@
+# Exclude all downloaded data files by default.
+*
+
+# Keep documentation, small samples, and download helpers.
+!.gitignore
+!README.md
+!**/README.md
+!**/samples/
+!**/samples/**
+!**/download.sh
+!**/download_instructions.txt
+!**/*.json
+!**/*.jsonl
+!**/*.md

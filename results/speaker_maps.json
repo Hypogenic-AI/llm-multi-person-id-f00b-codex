@@ -1,0 +1,28 @@
+{
+  "ami_sdm_EN2002b.Array1-01": {
+    "MEE073": "S1",
+    "FEO070": "S2",
+    "MEE071": "S3",
+    "FEO072": "S4"
+  },
+  "ami_sdm_TS3003a.Array1-01": {
+    "MTD012ME": "S1",
+    "MTD009PM": "S2",
+    "MTD011UID": "S3",
+    "MTD0010ID": "S4"
+  },
+  "ami_sdm_ES2004c.Array1-01": {
+    "FEE013": "S1",
+    "MEE014": "S2",
+    "FEE016": "S3",
+    "MEO015": "S4"
+  },
+  "simsamu_dj_mai_malaise_stef": {
+    "medecin": "S1",
+    "patient": "S2"
+  },
+  "simsamu_dj_2022_douleur_thoracique": {
+    "medecin": "S1",
+    "patient": "S2"
+  }
+}

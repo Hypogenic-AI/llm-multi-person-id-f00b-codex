@@ -1,0 +1,14 @@
+\section{Reproducibility Details}
+\label{app:reproducibility}
+
+The experiment used \asrmodel for 90 audio segments totaling 343.28 seconds and \relabelmodel for 60 LLM calls. The LLM calls consumed 63,822 input tokens and 19,800 output tokens. Using the OpenAI prices recorded in the run metadata on July 6, 2026, the estimated API cost was \$0.017 for ASR, \$0.057 for LLM calls, and \$0.074 total~\cite{openai2026gpt41mini,openai2026pricing}.
+
+The local environment recorded Python 3.12.8, NumPy 2.2.6, SciPy 1.18.0, scikit-learn 1.9.0, statsmodels 0.14.6, OpenAI 2.44.0, Matplotlib 3.11.0, seaborn 0.13.2, datasets 5.0.0, and pyarrow 24.0.0. GPU acceleration was not required; the environment contained four NVIDIA RTX A6000 GPUs with 49 GB each.
+
+The primary command sequence is:
+\begin{verbatim}
+source .venv/bin/activate
+uv add openai matplotlib scikit-learn statsmodels seaborn
+python src/run_experiment.py
+\end{verbatim}
+The main generated files are \texttt{results/metrics\_by\_case.csv}, \texttt{results/aggregate\_metrics.csv}, \texttt{results/statistical\_tests.csv}, \texttt{results/error\_analysis.csv}, \texttt{results/usage\_summary.json}, cached ASR outputs under \texttt{results/cache/}, cached LLM outputs under \texttt{results/model\_outputs/}, and generated figures under \texttt{figures/}. Re-running with existing caches should reproduce the reported metrics without new API calls.

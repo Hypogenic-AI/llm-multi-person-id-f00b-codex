@@ -1,0 +1,17 @@
+\begin{table}[t]
+    \centering
+    \resizebox{\textwidth}{!}{%
+    \begin{tabular}{@{}lrrrrr@{}}
+        \toprule
+        \textbf{Method} & \textbf{Mean WDER} $\downarrow$ & \textbf{Mean cpWER} $\downarrow$ & \textbf{Segment err.} $\downarrow$ & \textbf{Speaker-count MAE} $\downarrow$ & \textbf{Parse success} \\
+        \midrule
+        \llmnoprofile       & {\bf 0.375} & {\bf 0.521} & {\bf 0.373} & {\bf 0.400} & 1.00 \\
+        \llmprofile         & 0.381       & 0.529       & 0.380       & {\bf 0.400} & 1.00 \\
+        \noisylabels        & 0.390       & 0.550       & 0.387       & {\bf 0.400} & 1.00 \\
+        \smooth             & 0.442       & 0.628       & 0.437       & {\bf 0.400} & 1.00 \\
+        \bottomrule
+    \end{tabular}
+    }
+    \caption{Overall results across 30 window/noise cases. Lower is better for WDER, cpWER, segment error, and speaker-count MAE. Best values are in \textbf{bold}. \llmnoprofile gives the best mean accuracy, but the margin over \noisylabels is small.}
+    \label{tab:main_results}
+\end{table}

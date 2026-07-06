@@ -1,0 +1,6 @@
+dataset,recording_id,n_segments,n_speakers,mean_duration,overlap_segment_rate
+ami_sdm,EN2002b.Array1-01,490,4,3.966204081632652,0.7142857142857143
+ami_sdm,TS3003a.Array1-01,242,4,4.239520661157023,0.4793388429752066
+ami_sdm,ES2004c.Array1-01,497,4,4.516036217303823,0.6217303822937625
+simsamu,dj_mai_malaise_stef,80,2,3.110624999999999,0.05
+simsamu,dj_2022_douleur_thoracique,79,2,2.693164556962025,0.0

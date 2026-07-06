@@ -1,0 +1,22 @@
+\begin{table}[t]
+    \centering
+    \resizebox{\textwidth}{!}{%
+    \begin{tabular}{@{}llrrr@{}}
+        \toprule
+        \textbf{Dataset} & \textbf{Method} & \textbf{Speakers} & \textbf{Mean WDER} $\downarrow$ & \textbf{Mean cpWER} $\downarrow$ \\
+        \midrule
+        \amisdm & \noisylabels  & 4 & {\bf 0.443} & 0.630 \\
+        \amisdm & \llmnoprofile & 4 & {\bf 0.443} & 0.630 \\
+        \amisdm & \llmprofile   & 4 & {\bf 0.443} & 0.630 \\
+        \amisdm & \smooth       & 4 & 0.453       & {\bf 0.626} \\
+        \midrule
+        \simsamu & \noisylabels  & 2 & 0.310       & 0.431 \\
+        \simsamu & \llmnoprofile & 2 & {\bf 0.273} & {\bf 0.357} \\
+        \simsamu & \llmprofile   & 2 & 0.287       & 0.379 \\
+        \simsamu & \smooth       & 2 & 0.425       & 0.631 \\
+        \bottomrule
+    \end{tabular}
+    }
+    \caption{Dataset split. The LLM gain is concentrated in the two-speaker \simsamu condition. In four-speaker \amisdm, both LLM conditions leave aggregate WDER and cpWER unchanged relative to \noisylabels.}
+    \label{tab:dataset_split}
+\end{table}

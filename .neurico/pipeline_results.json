@@ -1,0 +1,27 @@
+{
+  "success": true,
+  "stages": {
+    "resource_finder": {
+      "success": true,
+      "completion_marker": "/workspaces/llm-multi-person-id-f00b-codex/.resource_finder_complete",
+      "outputs": {
+        "literature_review": "/workspaces/llm-multi-person-id-f00b-codex/literature_review.md",
+        "resources_catalog": "/workspaces/llm-multi-person-id-f00b-codex/resources.md",
+        "papers_dir": "/workspaces/llm-multi-person-id-f00b-codex/papers",
+        "datasets_dir": "/workspaces/llm-multi-person-id-f00b-codex/datasets",
+        "code_dir": "/workspaces/llm-multi-person-id-f00b-codex/code"
+      },
+      "log_file": "/workspaces/llm-multi-person-id-f00b-codex/logs/resource_finder_codex.log",
+      "transcript_file": "/workspaces/llm-multi-person-id-f00b-codex/logs/resource_finder_codex_transcript.jsonl",
+      "elapsed_time": 1098.4676921367645
+    },
+    "experiment_runner": {
+      "success": true,
+      "return_code": 0,
+      "elapsed_time": 1155.5909042358398,
+      "log_file": "/workspaces/llm-multi-person-id-f00b-codex/logs/execution_codex.log",
+      "transcript_file": "/workspaces/llm-multi-person-id-f00b-codex/logs/execution_codex_transcript.jsonl"
+    }
+  },
+  "work_dir": "/workspaces/llm-multi-person-id-f00b-codex"
+}

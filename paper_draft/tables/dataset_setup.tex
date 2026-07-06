@@ -1,0 +1,18 @@
+\begin{table}[t]
+    \centering
+    \resizebox{\textwidth}{!}{%
+    \begin{tabular}{@{}llrrrrl@{}}
+        \toprule
+        \textbf{Dataset} & \textbf{Recording} & \textbf{Segments} & \textbf{Speakers} & \textbf{Mean dur.} & \textbf{Overlap rate} & \textbf{Role in pilot} \\
+        \midrule
+        \amisdm & EN2002b.Array1-01 & 490 & 4 & 3.97s & 0.714 & Meeting window \\
+        \amisdm & TS3003a.Array1-01 & 242 & 4 & 4.24s & 0.479 & Meeting window \\
+        \amisdm & ES2004c.Array1-01 & 497 & 4 & 4.52s & 0.622 & Meeting window \\
+        \simsamu & dj\_mai\_malaise\_stef & 80 & 2 & 3.11s & 0.050 & Clinical dialogue \\
+        \simsamu & dj\_2022\_douleur\_thoracique & 79 & 2 & 2.69s & 0.000 & Clinical dialogue \\
+        \bottomrule
+    \end{tabular}
+    }
+    \caption{Datasets and selected recordings. \amisdm provides four-speaker meeting windows with high overlap; \simsamu provides two-speaker dialogue windows used as a sanity condition.}
+    \label{tab:dataset_setup}
+\end{table}

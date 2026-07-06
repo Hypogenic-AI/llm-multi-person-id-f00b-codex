@@ -1,0 +1,27 @@
+\section{Methodology}
+\label{sec:methodology}
+
+\para{Task.} We study transcript-preserving speaker relabeling. Each evaluated segment $i$ has transcript text $x_i$, true speaker $y_i$, noisy speaker label $\tilde{y}_i$, and word count $n_i$. A correction method predicts $\hat{y}_i$ while keeping $x_i$ fixed. The goal is to reduce speaker-attribution error without changing, deleting, or inserting words.
+
+\para{Data construction.} We use local \amisdm and \simsamu resources. \amisdm contributes three four-speaker meeting windows from English single distant microphone audio; \simsamu contributes two two-speaker French clinical-dialogue windows. The local \amisdm shard contains speaker time segments but not manual word transcripts, so we avoid invented text by transcribing selected real audio chunks with \asrmodel. Ground-truth speaker IDs come from local diarization annotations. Each evaluation window uses clean unscored turns for optional speaker profiles and scored turns for metric computation.
+
+\input{tables/dataset_setup}
+
+\para{Noise model.} We simulate diarization-style speaker-label errors by corrupting the true speaker label of each scored turn. Corruption is seeded and uses low, medium, and high base-noise settings. The corruption probability increases for overlapping turns, short turns, and speaker-change boundaries, matching common diarization failure surfaces. We use experiment seed 42 for setup and noise seeds 101 and 202 for each noise level.
+
+\para{Methods.} We compare four conditions.
+\begin{itemize}[leftmargin=*,itemsep=0pt,topsep=0pt]
+    \item \noisylabels keeps the seeded corrupted speaker labels and serves as the direct baseline.
+    \item \smooth fixes isolated single-turn speaker changes when the neighboring turns agree.
+    \item \llmnoprofile gives \relabelmodel the noisy transcript context and candidate speaker IDs, then asks for JSON speaker assignments only.
+    \item \llmprofile uses the same relabeler but adds clean, unscored high-confidence profile turns for each speaker.
+\end{itemize}
+The LLM uses temperature 0 where accepted, JSON-object response format, and a speaker-ID-only output schema. Fallback models were implemented but not used in the run.
+
+\para{Metrics.} Our primary metric is word diarization error rate:
+\begin{equation}
+    \mathrm{WDER} = \frac{\sum_i n_i \mathbb{I}[\hat{y}_i \neq y_i]}{\sum_i n_i}.
+\end{equation}
+We also report a local cpWER-style score that concatenates words by predicted and true speaker, then chooses the minimum-error speaker permutation for the small number of speakers in each window. Segment error is the fraction of scored segments with the wrong speaker label. Speaker count MAE is the absolute error in the number of speakers used by a method. Parse success is the fraction of LLM responses that return valid JSON assignments with usable segment IDs.
+
+\para{Statistical testing.} We compare each correction method against \noisylabels across 30 paired case pairs. Because normality was not supported for WDER differences, we use one-sided Wilcoxon signed-rank tests, bootstrap 95\% confidence intervals for mean WDER reduction, paired effect size $d_z$, and Holm correction across the three main comparisons.

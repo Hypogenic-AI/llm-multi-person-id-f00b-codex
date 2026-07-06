@@ -1,0 +1,34 @@
+{
+  "created_at": "2026-07-06T06:16:11.418701",
+  "stages": {
+    "resource_finder": {
+      "status": "completed",
+      "started_at": "2026-07-06T06:16:11.419034",
+      "completed_at": "2026-07-06T06:34:29.888124",
+      "success": true,
+      "outputs": {
+        "literature_review": "/workspaces/llm-multi-person-id-f00b-codex/literature_review.md",
+        "resources_catalog": "/workspaces/llm-multi-person-id-f00b-codex/resources.md",
+        "papers_dir": "/workspaces/llm-multi-person-id-f00b-codex/papers",
+        "datasets_dir": "/workspaces/llm-multi-person-id-f00b-codex/datasets",
+        "code_dir": "/workspaces/llm-multi-person-id-f00b-codex/code"
+      }
+    },
+    "experiment_runner": {
+      "status": "completed",
+      "started_at": "2026-07-06T06:34:29.888448",
+      "completed_at": "2026-07-06T06:53:45.490207",
+      "success": true,
+      "outputs": {
+        "success": true,
+        "return_code": 0,
+        "elapsed_time": 1155.5909042358398,
+        "log_file": "/workspaces/llm-multi-person-id-f00b-codex/logs/execution_codex.log",
+        "transcript_file": "/workspaces/llm-multi-person-id-f00b-codex/logs/execution_codex_transcript.jsonl"
+      }
+    }
+  },
+  "current_stage": null,
+  "completed": true,
+  "completed_at": "2026-07-06T06:53:45.490646"
+}
